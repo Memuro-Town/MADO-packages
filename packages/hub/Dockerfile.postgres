@@ -1,0 +1,11 @@
+# pgAudit入りのPostgres 16。
+#
+# 公式の postgres:16-alpine ではなく Debian ベースの postgres:16 を土台にしている。
+# pgAudit はAlpineの apk リポジトリには無いが、Debianの apt リポジトリには
+# postgresql-16-pgaudit として存在するため（`apt-cache search pgaudit` で確認済み）。
+# LGWAN搬入時はAlpineよりイメージサイズが大きくなる点はトレードオフとして残る。
+FROM postgres:16
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-16-pgaudit \
+    && rm -rf /var/lib/apt/lists/*

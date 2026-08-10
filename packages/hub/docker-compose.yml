@@ -1,0 +1,89 @@
+# MADO-Hub ローカル/庁内サーバー向け Compose 定義
+#
+# 秘密情報はこのファイルに書かない。同じディレクトリの .env から読み込む。
+#   cp .env.example .env  してから値を設定すること。
+# 必須の環境変数: POSTGRES_PASSWORD / SESSION_SECRET
+#
+# 注意: container_name を固定しているため、同一マシン上に本リポジトリの
+# チェックアウトが複数（例: 検証用に別ディレクトリへ再clone）あると、
+# Compose のプロジェクト名（デフォルトはディレクトリ名 "hub"）が一致し、
+# 同じ名前付きボリューム（hub_postgres_data）を共有してしまうことがある。
+# 別インスタンスとして独立させたい場合は `docker compose -p <別名> ...` を使うこと。
+
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
+    container_name: mado-hub-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-mado_hub}
+    # pgAudit有効化。shared_preload_librariesの変更はPostgres起動時にしか反映されないため
+    # ALTER SYSTEMではなく起動オプションで渡す。pgaudit.log_catalog=offはPrisma等のORMが
+    # 発行するカタログ参照クエリでログが埋もれるのを防ぐための推奨設定。
+    command: >
+      postgres
+      -c shared_preload_libraries=pgaudit
+      -c pgaudit.log=read,write,ddl,role
+      -c pgaudit.log_catalog=off
+      -c pgaudit.log_parameter=on
+      -c logging_collector=on
+      -c log_destination=stderr,csvlog
+    ports:
+      # DBはホストのループバックにのみ公開する（LANへ直接晒さない）
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # 初回起動時のみ実行される初期化スクリプト（実行順は名前順）。
+      # 空のボリュームに対してしか走らないため、既にデータの入った本番DBには影響しない。
+      - ./prisma/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./prisma/auth_init.sql:/docker-entrypoint-initdb.d/02-auth-init.sql:ro
+      - ./prisma/pgaudit_init.sql:/docker-entrypoint-initdb.d/03-pgaudit-init.sql:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-mado_hub}"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mado-hub-app
+    container_name: mado-hub-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      # コンテナ間はサービス名 postgres で名前解決される
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-mado_hub}?schema=public
+      COLUMN_CONFIG_PATH: /data/columns.json
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
+      # standalone サーバーが参照する待ち受け設定
+      HOSTNAME: 0.0.0.0
+      PORT: "3010"
+    ports:
+      # 庁内LANからの利用を想定して全インターフェースに公開する
+      - "3010:3010"
+    volumes:
+      # カラム名設定はホスト側ファイルを差し替えるだけで反映できる
+      - ./columns.json:/data/columns.json:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -q -O /dev/null http://127.0.0.1:3010/login || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  postgres_data:

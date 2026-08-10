@@ -1,0 +1,42 @@
+# 依存・ビルド成果物（イメージ内で再生成する）
+node_modules
+.next
+out
+build
+coverage
+
+# バージョン管理・CI
+.git
+.gitignore
+.gitattributes
+.github
+
+# 秘密情報（.env.example のみビルドコンテキストに残す）
+# 注意: この除外を消さないこと。next build は .env を .next/standalone/.env に
+# 出力するため、除外を外すと SESSION_SECRET や DB 接続情報がイメージに焼き込まれる。
+.env
+.env.*
+!.env.example
+
+# 配布用アーカイブ・DBファイル
+*.tar.gz
+*.tgz
+*.zip
+*.db
+*.db-journal
+*.sqlite
+
+# ドキュメント（実行に不要）
+*.md
+docs
+
+# Docker関連
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# エディタ・ツール設定
+.claude
+.vscode
+.idea
+.DS_Store

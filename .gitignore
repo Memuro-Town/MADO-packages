@@ -1,0 +1,72 @@
+# Database（住民情報を含むためコミットしない）
+# data/ は各自治体の住民DBの置き場。ディレクトリだけ残し、中身は一切コミットしない。
+data/*
+!data/.gitkeep
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# 環境変数（例示用の .env.example のみ許可）
+.env*
+!.env.example
+
+# ローカル開発用の認証情報メモ（絶対にコミットしない）
+.local-credentials*
+
+# 依存パッケージ
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Next.js / ビルド成果物
+.next/
+out/
+build/
+dist/
+next-env.d.ts
+*.tsbuildinfo
+
+# Python（tools/ 配下）
+__pycache__/
+*.pyc
+*.pyo
+
+# 配布アーカイブ（.env等の機密情報を同梱しうるため）
+*.tar.gz
+*.tgz
+*.zip
+
+# テスト
+coverage/
+.nyc_output/
+
+# ログ・デバッグ
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# 証明書・鍵
+*.pem
+*.key
+*.pfx
+
+# デプロイ / エディタ / OS
+.vercel
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Backups / User specific
+バックアップ/
+.gemini/
+.agent/
+.claude/

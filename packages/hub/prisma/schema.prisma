@@ -1,0 +1,129 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 認証用ユーザー（新設テーブル。既存の住民テーブルには触れない）
+model User {
+  id           Int      @id @default(autoincrement())
+  loginId      String   @unique @map("login_id")
+  name         String
+  department   String
+  role         String   @default("staff") // "admin" | "staff"
+  passwordHash String   @map("password_hash")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  permissionGrants     PermissionGrant[]
+  permissionExceptions PermissionException[]
+
+  @@map("users")
+}
+
+// 権限グループの割り当て（期限つき）
+model PermissionGrant {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  groupId   String    @map("group_id")
+  expiresAt DateTime  @map("expires_at")
+  grantedAt DateTime  @default(now()) @map("granted_at")
+  grantedBy String    @map("granted_by") // 付与した人のログインID
+  reason    String?
+  revokedAt DateTime? @map("revoked_at") // 手動取消。★行は削除しない
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([groupId])
+  @@index([expiresAt])
+  @@map("permission_grants")
+}
+
+// 臨時の追加・除外
+model PermissionException {
+  id         Int       @id @default(autoincrement())
+  userId     Int       @map("user_id")
+  effect     String // 'add' | 'remove'
+  tableName  String    @map("table_name")
+  columnName String    @map("column_name")
+  expiresAt  DateTime  @map("expires_at")
+  grantedAt  DateTime  @default(now()) @map("granted_at")
+  grantedBy  String    @map("granted_by")
+  reason     String // ★必須（申請の根拠）
+  revokedAt  DateTime? @map("revoked_at")
+  user       User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("permission_exceptions")
+}
+
+// 管理画面の操作記録
+model AdminAuditLog {
+  id          Int      @id @default(autoincrement())
+  at          DateTime @default(now())
+  actorLogin  String   @map("actor_login")
+  actorName   String   @map("actor_name") // 異動があっても当時の所属が分かるよう値を焼き込む
+  actorDept   String   @map("actor_dept") // 同上
+  action      String
+  targetLogin String?  @map("target_login")
+  detail      Json
+  ip          String?
+  userAgent   String?  @map("user_agent")
+
+  @@index([at])
+  @@index([actorLogin])
+  @@index([targetLogin])
+  @@map("admin_audit_log")
+}
+
+// 住民情報の閲覧・検索を記録する監査ログ（管理画面の操作記録とは別テーブル。
+// 性質・点検頻度・閲覧者が異なるため意図的に分けている）。
+model AuditLog {
+  id              Int      @id @default(autoincrement())
+  at              DateTime @default(now())
+  actorLogin      String   @map("actor_login")
+  actorName       String   @map("actor_name") // 異動があっても当時の所属が分かるよう値を焼き込む
+  actorDept       String   @map("actor_dept") // 同上
+  action          String                          // 'resident.search' | 'resident.view' | 'resident.view_extra' | 'household.view'
+  targetAtenaCode Int?     @map("target_atena_code") // 対象の宛名番号（検索など対象を1件に絞れない操作ではnull。詳細はdetailへ）
+  detail          Json
+  ip              String?
+  userAgent       String?  @map("user_agent")
+
+  @@index([at])
+  @@index([actorLogin])
+  @@index([targetAtenaCode])
+  @@map("audit_log")
+}
+
+// 日次ダイジェスト（改ざん検知用）。
+// その日のダイジェスト = hash(前日のダイジェスト + その日のaudit_log全行の正規化直列化)。
+// 計算ロジック（lib/auditDigest.ts）は一度アンカーした日の分を変えると
+// 過去との整合性検証が壊れるため、追記のみ・既存ロジック不変更が前提。
+model DailyDigest {
+  id             Int      @id @default(autoincrement())
+  date           DateTime @unique @db.Date @map("date")
+  digest         String
+  previousDigest String?  @map("previous_digest")
+  rowCount       Int      @map("row_count")
+  computedAt     DateTime @default(now()) @map("computed_at")
+
+  @@map("daily_digests")
+}
+
+// 日本語カラム名のためPrismaモデルは最小定義。全クエリは$queryRawUnsafeで実行する。
+model resident_table {
+  atena_code      Int     @id @map("宛名番号")
+  household_code  Int?    @map("世帯番号")
+  name            String? @map("氏名")
+  name_kana       String? @map("氏名_フリガナ")
+  birthdate       String? @map("生年月日")
+  resident_status Int?    @map("住民状態")
+
+  @@map("resident_table")
+}

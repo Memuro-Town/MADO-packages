@@ -1,0 +1,33 @@
+# 既定：テキストは自動判定し、リポジトリ内はLFで保存
+* text=auto eol=lf
+
+# シェルスクリプト・Dockerまわりは必ずLF（CRLFだとLinux/Dockerで起動失敗するため）
+*.sh        text eol=lf
+entrypoint.sh text eol=lf
+Dockerfile  text eol=lf
+
+# ソース・設定ファイル（Node / Next.js）
+*.ts        text eol=lf
+*.tsx       text eol=lf
+*.js        text eol=lf
+*.jsx       text eol=lf
+*.mjs       text eol=lf
+*.cjs       text eol=lf
+*.json      text eol=lf
+*.css       text eol=lf
+*.md        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.sql       text eol=lf
+*.prisma    text eol=lf
+
+# バイナリ（変換させない）
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
+*.db    binary
+*.pdf   binary

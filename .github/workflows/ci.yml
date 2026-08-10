@@ -1,0 +1,75 @@
+# CI: パッケージごとの自動テスト定義
+#
+# MADO-packages はモノレポだが、ルートに package.json は存在しない。
+# パッケージ（packages/hub, 将来的には packages/form, packages/care, packages/move）ごとに
+# 独立した package.json を持つため、ジョブもパッケージ単位で分けて定義する。
+#
+# 新しいパッケージを追加する場合は、この下に同じ形のジョブ
+# （例: form-test, care-test, move-test）を追加し、
+# トリガーの paths にも該当パッケージのパスを追記すること。
+
+name: CI
+
+on:
+  pull_request:
+    # ブランチ指定なし = すべてのブランチからの Pull Request を対象にする
+    paths:
+      - 'packages/hub/**'
+      - '.github/workflows/ci.yml'
+  push:
+    # main への push（マージ後など）のみ対象。他ブランチへの push では走らせない
+    branches:
+      - main
+    paths:
+      - 'packages/hub/**'
+      - '.github/workflows/ci.yml'
+
+# 必要最小限の権限のみ付与する（リポジトリの読み取りのみでよい）
+permissions:
+  contents: read
+
+jobs:
+  # packages/hub 用のテストジョブ。
+  # 将来 packages/form などを追加するときは、この job を丸ごとコピーして
+  # working-directory と paths フィルタをそれぞれのパッケージ用に書き換える想定。
+  hub-test:
+    name: hub-test
+    runs-on: ubuntu-latest
+    # 想定外にジョブが止まって時間を浪費しないよう、上限時間を設定しておく
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        # 以降の run はすべて packages/hub ディレクトリを起点に実行する
+        working-directory: packages/hub
+
+    steps:
+      - name: リポジトリを取得する
+        uses: actions/checkout@v4
+
+      - name: Node.js をセットアップする
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          # package-lock.json を元に npm の依存関係キャッシュを効かせ、
+          # 毎回のインストール時間を短縮する
+          cache: 'npm'
+          cache-dependency-path: packages/hub/package-lock.json
+
+      - name: 依存パッケージをインストールする
+        run: npm ci
+
+      - name: Prisma Client を生成する
+        # 型チェック（tsc）の前に必ず実行する必要がある。
+        # アプリのコードは "@prisma/client" から型・クライアントを import しているが、
+        # これは prisma generate を実行した時点で node_modules 配下に生成されるものであり、
+        # リポジトリには含まれていない。生成せずに型チェックすると
+        # 「モジュールが見つからない」等のエラーになってしまうため、事前に生成しておく。
+        # なお、実際のデータベースへの接続は行わないので、DATABASE_URL 等の秘密情報は不要。
+        run: npx prisma generate
+
+      - name: 型チェックを実行する（tsc --noEmit）
+        run: npx tsc --noEmit
+
+      - name: テストを実行する（vitest）
+        run: npm test
