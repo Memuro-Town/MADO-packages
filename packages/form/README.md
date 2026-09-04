@@ -131,7 +131,7 @@ flowchart LR
 
 ## 議論の場
 
-議論の台帳は **このリポジトリの GitHub Issue** である。<!-- 起票後に URL を入れる -->
+議論の台帳は **このリポジトリの [GitHub Issue #6](https://github.com/Memuro-Town/MADO-packages/issues/6)** である。
 
 現場の流れについてのコメントも、Issue に直接書いてよい。コードの知識は不要である。既存のコントリビューターからの質問・確認も歓迎する。
 
