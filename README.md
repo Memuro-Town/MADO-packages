@@ -228,6 +228,8 @@ graph TD
     queue -.- |独立動作| hub
 ```
 
+`care` の説明は [packages/care/README.md](packages/care/README.md)、`move` は [packages/move/README.md](packages/move/README.md)。
+
 `hub` は閉じた庁内ネットワーク上で動作し、住民情報を扱う（芽室町では三層分離のうち**個人番号利用事務系**に設置している）。`form` / `care` / `move` は `hub` に依存するため、同じリポジトリの `packages/` 配下に順次追加していく。
 `queue` は受付ネットワーク上で独立して動作し、住民の個人情報を一切扱わない。ネットワークもコードも分離しているため、別リポジトリ [MADO-queue](https://github.com/Memuro-Town/MADO-queue) で公開している。
 各パッケージの最新の公開状況は [Memuro-Town organizationトップ](https://github.com/Memuro-Town) を参照。
