@@ -6,6 +6,10 @@ import { recordAuditLog } from '@/lib/auditLog';
 import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/session';
 import { NextRequest, NextResponse } from 'next/server';
 
+(BigInt.prototype as unknown as Record<string, unknown>).toJSON = function () {
+  return this.toString();
+};
+
 const { table, atena_code, household_code, name, name_kana, birthdate, gender,
         household_head_name, address_town, address_banchi,
         address_kata, address_city_code, postal_code, honseki, honseki_banchi,

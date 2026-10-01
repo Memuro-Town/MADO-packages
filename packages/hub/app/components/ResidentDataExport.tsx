@@ -105,8 +105,20 @@ interface Props {
 export default function ResidentDataExport({ atenaCode }: Props) {
   const [detail, setDetail] = useState<ResidentDetail | null>(null);
   const [household, setHousehold] = useState<HouseholdMember[]>([]);
+  const [householdError, setHouseholdError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  /** 詳細APIの世帯コードをURL用の数字文字列に正規化する */
+  function normalizeHouseholdCode(detailData: Record<string, unknown>): string | null {
+    const raw =
+      detailData['世帯ｺｰﾄﾞ'] ??
+      detailData['世帯コード'] ??
+      Object.entries(detailData).find(([k]) => k.includes('世帯') && (k.includes('ｺｰﾄﾞ') || k.includes('コード')))?.[1];
+    if (raw === null || raw === undefined || raw === '') return null;
+    const normalized = String(raw).trim().replace(/\.0+$/, '');
+    return /^\d+$/.test(normalized) ? normalized : null;
+  }
   const [selected, setSelected] = useState<Set<string>>(new Set(DEFAULT_KEYS));
   const [hhOpts, setHhOpts] = useState<HouseholdOptions>({
     enabled: true,
@@ -125,6 +137,7 @@ export default function ResidentDataExport({ atenaCode }: Props) {
   useEffect(() => {
     setLoading(true);
     setError(null);
+    setHouseholdError(null);
     setDetail(null);
     setHousehold([]);
 
@@ -134,15 +147,21 @@ export default function ResidentDataExport({ atenaCode }: Props) {
         const data = await res.json();
         if (data.error) { setError(data.error); return; }
         setDetail(data as ResidentDetail);
-        const householdCode = data['世帯ｺｰﾄﾞ'];
-        if (householdCode) {
-          const hhRes = await authFetch(`/api/households/${householdCode}`);
-          if (hhRes.status === 401) return; // ログイン画面へリダイレクト済み
-          const hhData = await hhRes.json();
-          const members = Array.isArray(hhData) ? hhData : [];
-          setHousehold(members);
-          setSelectedMemberCodes(new Set());
+        const householdCode = normalizeHouseholdCode(data as Record<string, unknown>);
+        if (!householdCode) {
+          setHouseholdError('世帯コードが取得できないため、世帯員を表示できません');
+          return;
         }
+        const hhRes = await authFetch(`/api/households/${householdCode}`);
+        if (hhRes.status === 401) return; // ログイン画面へリダイレクト済み
+        const hhData = await hhRes.json();
+        if (!hhRes.ok || !Array.isArray(hhData)) {
+          setHousehold([]);
+          setHouseholdError((hhData as { error?: string } | null)?.error ?? '世帯員の取得に失敗しました');
+          return;
+        }
+        setHousehold(hhData);
+        setSelectedMemberCodes(new Set());
       })
       .catch(() => setError('通信エラーが発生しました'))
       .finally(() => setLoading(false));
@@ -418,8 +437,13 @@ export default function ResidentDataExport({ atenaCode }: Props) {
         </div>
 
         {/* 世帯員個別選択 */}
+        {householdError && (
+          <div className="p-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+            {householdError}
+          </div>
+        )}
         {household.length === 0 ? (
-          <p className="text-gray-400 text-sm">世帯員なし</p>
+          <p className="text-gray-400 text-sm">{householdError ? '世帯員を表示できません' : '世帯員なし'}</p>
         ) : (
           <div className="divide-y divide-gray-100">
             <div className="pb-1.5">

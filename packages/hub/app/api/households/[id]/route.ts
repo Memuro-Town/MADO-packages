@@ -6,6 +6,11 @@ import { recordAuditLog } from '@/lib/auditLog';
 import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/session';
 import { NextRequest, NextResponse } from 'next/server';
 
+// CSV取込由来で BigInt / numeric が混ざっても JSON 化できるようにする
+(BigInt.prototype as unknown as Record<string, unknown>).toJSON = function () {
+  return this.toString();
+};
+
 const { table, atena_code, household_code, name, name_kana, birthdate,
         relationship, resident_status, record_order } = cols;
 
@@ -36,6 +41,8 @@ export async function GET(
     const payload = token ? await verifySessionToken(token) : null;
     const allowed = await resolveAllowedColumnsForLogin(payload?.sub);
     // columns.json でDB列名が変わっても、APIレスポンスのキー名を固定する
+    // CSV取込後の世帯番号は text / integer / numeric(100.0) が混ざりうる。
+    // 文字列比較に寄せ、末尾の ".0" も落として照合する。
     const rows = await db.$queryRawUnsafe<unknown[]>(
       `SELECT
          ${q(name_kana)}      AS "カナ氏名",
@@ -45,8 +52,8 @@ export async function GET(
          ${q(atena_code)}     AS "住民ｺｰﾄﾞ",
          ${q(resident_status)} AS "住民状態"
        FROM ${q(table)}
-       WHERE ${q(household_code)} = $1
-       ORDER BY ${q(record_order)} ASC`,
+       WHERE regexp_replace(${q(household_code)}::text, '\\.0+$', '') = $1
+       ORDER BY ${q(record_order)} ASC NULLS LAST`,
       id
     );
 
