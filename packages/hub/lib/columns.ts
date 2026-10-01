@@ -12,14 +12,12 @@ export interface ColumnConfig {
   resident_status: string;
   gender: string;
   household_head_name: string;
-  address_city: string;
   address_city_code: string;
   address_kata: string;
   postal_code: string;
   honseki: string;
   honseki_banchi: string;
-  koseki_head_surname: string;
-  koseki_head_given_name: string;
+  koseki_head: string;
   relationship: string;
   record_order: string;
 }
@@ -29,21 +27,19 @@ const defaults: ColumnConfig = {
   atena_code:           '宛名番号',
   household_code:       '世帯番号',
   name:                 '氏名',
-  name_kana:            '氏名_フリガナ',
+  name_kana:            '氏名_振り仮名（フリガナ）',
   birthdate:            '生年月日',
   address_town:         '住所_町字',
   address_banchi:       '住所_番地号表記',
   resident_status:      '住民状態',
   gender:               '性別表記',
   household_head_name:  '世帯主氏名',
-  address_city:         '住所_市区郡町村名',
   address_city_code:    '地区管理コード1',
   address_kata:         '住所_方書',
   postal_code:          '住所_郵便番号',
-  honseki:              '本籍_町字',
+  honseki:              '本籍',
   honseki_banchi:       '本籍_地番号または、街区符号',
-  koseki_head_surname:  '戸籍_筆頭者_氏',
-  koseki_head_given_name: '戸籍_筆頭者_名',
+  koseki_head:          '戸籍_筆頭者',
   relationship:         '続柄表記',
   record_order:         '記載順位',
 };

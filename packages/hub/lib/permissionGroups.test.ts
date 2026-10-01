@@ -23,6 +23,8 @@ describe('expandGroupColumns', () => {
     expect(columns.has('氏名')).toBe(true);
     expect(columns.has('本籍')).toBe(true);
     expect(columns.has('戸籍_筆頭者')).toBe(true);
+    expect(columns.has('氏名_振り仮名（フリガナ）')).toBe(true);
+    expect(columns.has('住所_市区郡町村名')).toBe(false);
     expect(columns.has('存在しないダミー列名')).toBe(false);
   });
 
