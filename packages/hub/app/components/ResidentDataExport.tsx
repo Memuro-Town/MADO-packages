@@ -96,7 +96,7 @@ const FIELD_GROUPS: FieldGroup[] = [
 ];
 
 const ALL_KEYS = FIELD_GROUPS.flatMap(g => g.fields.map(f => f.key));
-const DEFAULT_KEYS = new Set(['氏名', '郵便番号', '住所']);
+const DEFAULT_KEYS = new Set(['氏名', '郵便番号', '住所', '方書']);
 
 interface Props {
   atenaCode: number | string;
@@ -355,11 +355,13 @@ export default function ResidentDataExport({ atenaCode }: Props) {
                 </button>
                 <div className="grid grid-cols-1 gap-1.5 ml-5">
                   {group.fields.map(f => (
-                    <label key={f.key} className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                      <input type="checkbox" checked={selected.has(f.key)} onChange={() => toggleField(f.key)} className="accent-mado-head" />
-                      <span className="text-gray-500 w-28 shrink-0">{f.label}</span>
-                      <span className="text-gray-900 font-medium">{getDisplayValue(f)}</span>
-                    </label>
+                    <div key={f.key} className="flex items-center gap-2 text-sm">
+                      <label className="flex items-center gap-2 cursor-pointer select-none shrink-0">
+                        <input type="checkbox" checked={selected.has(f.key)} onChange={() => toggleField(f.key)} className="accent-mado-head" />
+                        <span className="text-gray-500 w-28">{f.label}</span>
+                      </label>
+                      <span className="text-gray-900 font-medium select-text">{getDisplayValue(f)}</span>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -396,7 +398,7 @@ export default function ResidentDataExport({ atenaCode }: Props) {
                 {columns.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
               {col && (
-                <span className="text-xs text-gray-600 w-32 truncate shrink-0">
+                <span className="text-xs text-gray-600 w-32 truncate shrink-0 select-text">
                   {customValues[col] ?? '…'}
                 </span>
               )}
@@ -461,23 +463,25 @@ export default function ResidentDataExport({ atenaCode }: Props) {
               if (hhOpts.birthdate) extras.push(toJapaneseEra(m.生年月日));
               if (hhOpts.age) extras.push(calcAge(m.生年月日));
               return (
-                <label key={code} className="flex items-center gap-2 py-2 text-sm cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => toggleMember(code)}
-                    className="accent-mado-head"
-                  />
-                  <span className="text-gray-400 text-xs w-12 shrink-0">世帯員{i + 1}</span>
-                  <span className={`font-medium ${checked ? 'text-gray-900' : 'text-gray-400'}`}>{m.氏名}</span>
-                  <span className="text-gray-500 text-xs">{m.続柄}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded ${parseInt(String(m.住民状態), 10) === 1 ? 'text-mado-head bg-mado-tint' : 'text-gray-400 bg-gray-100'}`}>
+                <div key={code} className="flex items-center gap-2 py-2 text-sm">
+                  <label className="flex items-center gap-2 cursor-pointer select-none shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleMember(code)}
+                      className="accent-mado-head"
+                    />
+                    <span className="text-gray-400 text-xs w-12">世帯員{i + 1}</span>
+                  </label>
+                  <span className={`font-medium select-text ${checked ? 'text-gray-900' : 'text-gray-400'}`}>{m.氏名}</span>
+                  <span className="text-gray-500 text-xs select-text">{m.続柄}</span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded select-text ${parseInt(String(m.住民状態), 10) === 1 ? 'text-mado-head bg-mado-tint' : 'text-gray-400 bg-gray-100'}`}>
                     {RESIDENT_STATUS[parseInt(String(m.住民状態), 10)] ?? m.住民状態}
                   </span>
                   {extras.length > 0 && (
-                    <span className="text-gray-400 text-xs">{extras.join('・')}</span>
+                    <span className="text-gray-400 text-xs select-text">{extras.join('・')}</span>
                   )}
-                </label>
+                </div>
               );
             })}
           </div>
