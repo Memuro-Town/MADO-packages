@@ -96,6 +96,7 @@ const FIELD_GROUPS: FieldGroup[] = [
 ];
 
 const ALL_KEYS = FIELD_GROUPS.flatMap(g => g.fields.map(f => f.key));
+// 窓口で一番多い「住所を取る」ケースに合わせ、方書まで初期チェックする
 const DEFAULT_KEYS = new Set(['氏名', '郵便番号', '住所', '方書']);
 
 interface Props {
