@@ -82,7 +82,14 @@ total_records = len(df)
 print(f"全レコード数: {total_records:,}")
 
 # ===== データベース接続（PostgreSQL） =====
-engine = create_engine(DATABASE_URL)
+# SQLAlchemy 2.1 以降、postgresql:// は既定で psycopg (v3) を探す。
+# 配布 exe は psycopg2-binary を同梱しているため、明示的に psycopg2 を使う。
+_db_url = DATABASE_URL
+if _db_url.startswith('postgresql://'):
+    _db_url = 'postgresql+psycopg2://' + _db_url[len('postgresql://'):]
+elif _db_url.startswith('postgres://'):
+    _db_url = 'postgresql+psycopg2://' + _db_url[len('postgres://'):]
+engine = create_engine(_db_url)
 
 # 接続先DB名が想定通りかを確認する（誤った実在DBへの書き込み事故を防ぐ安全確認）
 with engine.connect() as check_conn:
@@ -104,19 +111,20 @@ with engine.begin() as conn:
     df.to_sql('resident_table_all', conn, if_exists='replace', index=False)
     print(f"resident_table_all: {total_records:,} 件を登録完了")
 
-    # ===== テーブル2: 最新フラグのみのテーブル (resident_table) =====
-    print("\n最新データテーブル (resident_table) を作成中...")
+    # ===== テーブル2: hub 参照用テーブル (resident_table) =====
+    # 住基側で最新フラグ＝1 のみを抽出した CSV を受け取る運用のため、
+    # 取込スクリプト側では "最新フラグ" による絞り込みをしない。
+    print("\n参照用テーブル (resident_table) を作成中...")
 
     conn.execute(text("DROP TABLE IF EXISTS resident_table"))
 
     conn.execute(text("""
         CREATE TABLE resident_table AS
         SELECT * FROM resident_table_all
-        WHERE "最新フラグ" = 1
     """))
 
     latest_count = conn.execute(text("SELECT COUNT(*) FROM resident_table")).scalar()
-    print(f"resident_table: {latest_count:,} 件を登録完了 (最新フラグ=1のみ)")
+    print(f"resident_table: {latest_count:,} 件を登録完了")
 
     # ===== インデックス作成 =====
     print("\nインデックスを作成中...")
@@ -136,5 +144,5 @@ with engine.begin() as conn:
             print(f"  {idx_name} ({col_name}) - エラー: {e}")
 
 print(f"\n処理完了！")
-print(f"  - resident_table_all: 全 {total_records:,} 件")
-print(f"  - resident_table: 最新 {latest_count:,} 件 (最新フラグ=1)")
+print(f"  - resident_table_all: {total_records:,} 件")
+print(f"  - resident_table: {latest_count:,} 件")

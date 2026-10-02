@@ -31,8 +31,16 @@ CSV_SOURCE_DIR=\\<内部サーバー名>\<共有ディスク>\<業務フォル�
 python resident_data_to_db_pg.py
 ```
 
+PyInstaller 済みの exe もある（`dist/resident_data_to_db_pg.exe`）。exe と同じフォルダに `.env` を置く。
+
+```bash
+# 再ビルド
+pyinstaller --noconfirm --clean resident_data_to_db_pg.spec
+```
+
 `CSV_SOURCE_DIR` にある `URE*.CSV` のうち最新の更新日時のファイルを1件読み込み、
-`resident_table_all`（全件）と `resident_table`（`最新フラグ=1` のみ）を **DROP → 再作成**する。
+`resident_table_all` と `resident_table` を **DROP → 再作成**する。
+住基側で最新フラグ＝1 のみを抽出した CSV を置く運用とし、取込スクリプト側では `最新フラグ` による絞り込みはしない。
 
 ## 注意点
 

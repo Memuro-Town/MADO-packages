@@ -3,7 +3,7 @@ import { filterAllowedFields, type ColumnDependencyMap } from '@/lib/columnDepen
 
 const DEPENDENCIES: ColumnDependencyMap = {
   '氏名': ['氏名'],
-  '本籍住所＋番地': ['本籍_町字', '本籍_地番号または、街区符号'],
+  '本籍住所＋番地': ['本籍', '本籍_地番号または、街区符号'],
 };
 
 describe('filterAllowedFields', () => {
@@ -21,7 +21,7 @@ describe('filterAllowedFields', () => {
     const result = filterAllowedFields(
       { '本籍住所＋番地': '徳島県北島町1-2' },
       DEPENDENCIES,
-      new Set(['本籍_町字']) // 片方だけ許可
+      new Set(['本籍']) // 片方だけ許可
     );
     expect(result).toEqual({});
   });
@@ -30,7 +30,7 @@ describe('filterAllowedFields', () => {
     const result = filterAllowedFields(
       { '本籍住所＋番地': '徳島県北島町1-2' },
       DEPENDENCIES,
-      new Set(['本籍_町字', '本籍_地番号または、街区符号'])
+      new Set(['本籍', '本籍_地番号または、街区符号'])
     );
     expect(result).toEqual({ '本籍住所＋番地': '徳島県北島町1-2' });
   });

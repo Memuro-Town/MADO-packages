@@ -6,28 +6,32 @@ import { recordAuditLog } from '@/lib/auditLog';
 import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/session';
 import { NextRequest, NextResponse } from 'next/server';
 
+(BigInt.prototype as unknown as Record<string, unknown>).toJSON = function () {
+  return this.toString();
+};
+
 const { table, atena_code, household_code, name, name_kana, birthdate, gender,
-        household_head_name, address_city, address_town, address_banchi,
-        address_kata, address_city_code, postal_code, honseki, honseki_banchi, koseki_head_surname,
-        koseki_head_given_name, resident_status } = cols;
+        household_head_name, address_town, address_banchi,
+        address_kata, address_city_code, postal_code, honseki, honseki_banchi,
+        koseki_head, resident_status } = cols;
 
 // レスポンスのキー（APIレスポンスのキー名）→ そのために必要な実DB列名。
-// 「本籍住所＋番地」「筆頭者」のように複数列を連結して作る項目は、
+// 「本籍住所＋番地」のように複数列を連結して作る項目は、
 // 元の列すべてが許可されていないと出力しない。
+// 市町村名は新スキーマに市区郡町村名列が無いため常に空文字を返す。
 const RESIDENT_DETAIL_DEPENDENCIES: ColumnDependencyMap = {
   '氏名': [name],
   'カナ氏名': [name_kana],
   '生年月日': [birthdate],
   '性別': [gender],
   '世帯主名': [household_head_name],
-  '市町村名': [address_city],
   '住所': [address_town, address_banchi],
   '番地': [address_banchi],
   '方書': [address_kata],
   '行政区コード': [address_city_code],
   '郵便番号': [postal_code],
   '本籍住所＋番地': [honseki, honseki_banchi],
-  '筆頭者': [koseki_head_surname, koseki_head_given_name],
+  '筆頭者': [koseki_head],
   '住民ｺｰﾄﾞ': [atena_code],
   '世帯ｺｰﾄﾞ': [household_code],
   '住民状態': [resident_status],
@@ -55,14 +59,14 @@ export async function GET(
          ${q(birthdate)}         AS "生年月日",
          ${q(gender)}            AS "性別",
          ${q(household_head_name)} AS "世帯主名",
-         COALESCE(${q(address_city)}::text, '')  AS "市町村名",
+         ''::text                AS "市町村名",
          COALESCE(${q(address_town)}::text, '') || COALESCE(${q(address_banchi)}::text, '') AS "住所",
          COALESCE(${q(address_banchi)}::text, '') AS "番地",
          COALESCE(${q(address_kata)}::text, '')  AS "方書",
          COALESCE(${q(address_city_code)}::text, '') AS "行政区コード",
          COALESCE(${q(postal_code)}::text, '')   AS "郵便番号",
          COALESCE(${q(honseki)}::text, '') || COALESCE(${q(honseki_banchi)}::text, '') AS "本籍住所＋番地",
-         COALESCE(${q(koseki_head_surname)}::text, '') || ' ' || COALESCE(${q(koseki_head_given_name)}::text, '') AS "筆頭者",
+         COALESCE(${q(koseki_head)}::text, '') AS "筆頭者",
          ${q(atena_code)}        AS "住民ｺｰﾄﾞ",
          ${q(household_code)}    AS "世帯ｺｰﾄﾞ",
          ${q(resident_status)}   AS "住民状態"
