@@ -12,7 +12,7 @@
 - [動画・帳票・現行コードの案内](../../docs/form/materials.md)：現在の動きを理解するための資料。
 - [設計議論の入口：Issue #6](https://github.com/Memuro-Town/MADO-packages/issues/6)。
 
-動画は現行版の説明資料です。Excel帳票と参考コードは掲載準備中で、OSS版で現行の実装を継続採用するかは相談対象とします。
+動画と[現行Python版の参考コード](../../docs/form/reference/legacy_desktop_form.py)は、現行版を理解するための説明資料です。Excel帳票は掲載準備中で、OSS版で現行の実装を継続採用するかは相談対象とします。
 
 ## 現状と目指す流れ
 
