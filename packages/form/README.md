@@ -8,10 +8,11 @@
 
 - [業務フロー](../../docs/form/workflow.html)：本町の現行運用と、数量変更時の会計の運用案。HTMLは保存してブラウザで開けます。
 - [方針・要求と構成の基本案](../../docs/form/requirements-and-design.md)：実現したいこと、前提、未決事項。
+- [現行版の操作デモ（MP4、約8.8MB）](../../docs/form/assets/form-demo.mp4)：ダミーデータを使ったPython版の動き。
 - [動画・帳票・現行コードの案内](../../docs/form/materials.md)：現在の動きを理解するための資料。
 - [設計議論の入口：Issue #6](https://github.com/Memuro-Town/MADO-packages/issues/6)。
 
-動画・Excel帳票・参考コードは掲載準備中です。現行版の説明資料として用意し、OSS版で現行の実装を継続採用するかは相談対象とします。
+動画は現行版の説明資料です。Excel帳票と参考コードは掲載準備中で、OSS版で現行の実装を継続採用するかは相談対象とします。
 
 ## 現状と目指す流れ
 
