@@ -14,8 +14,8 @@
 北海道芽室町が開発・運用している行政窓口業務支援システム **MADO** のOSS版。
 中・大規模向けSaaSではなく、**小規模自治体が現場で使い続けられるLITE版**として設計している。
 
-> 📦 **このリポジトリは MADO の `hub` / `form` / `care` / `move` を収めるリポジトリです。現在は `hub`（住民情報データ出力）のみを公開しています。**
-> `form` / `care` / `move` は整備が済み次第、同じリポジトリの `packages/` 配下に順次追加する。
+> 📦 **このリポジトリは MADO の `hub` / `form` / `care` / `move` を収めるリポジトリです。現在アプリとして公開しているのは `hub`（住民情報データ出力）のみです。**
+> `form` は[業務フロー・要求・構成の基本案を示して設計を相談している段階](packages/form/README.md)。`care` / `move` は整備が済み次第、同じリポジトリの `packages/` 配下に順次追加する。
 > `queue`（番号発券）だけは受付ネットワーク上で完全に独立して動くため、別リポジトリ [MADO-queue](https://github.com/Memuro-Town/MADO-queue) で公開している。全体像は [パッケージ構成](#パッケージ構成) を参照。
 
 > 🧭 **MADO は役割ごとに4つのリポジトリに分かれている。**（📍現在地）
@@ -271,6 +271,8 @@ MADO-packages/
 
 ### form / care / move（同リポジトリに順次追加）
 - **Framework**: Next.js (App Router) / **Language**: TypeScript
+
+`form` は上記を基本案として、Excel帳票の書込み・ダウンロードを含む構成を相談中。サーバーにはExcelを置かず、窓口PCのExcelで調整・印刷する前提としている。帳票・QRの処理方式とPython採用の要否は、モックアップでの検証を踏まえて判断する。詳細は [form README](packages/form/README.md) を参照。
 
 ### queue（別リポジトリ）
 - **Framework**: Flask 3.x / **Language**: Python 3.14 / **Database**: SQLite
