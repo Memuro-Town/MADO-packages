@@ -16,6 +16,9 @@
 ---
 
 ## 関連リソース（ルートディレクトリ）
+
+- [MADO-formの設計議論](../packages/form/README.md)：業務フロー、要求、Excel出力を含む構成の基本案への入口。
+
 - [README.md](../README.md): プロジェクトの概要とクイックスタート。
 - [packages/hub/README.md](../packages/hub/README.md): `hub` パッケージ固有の設定（`columns.json` のカラム名マッピング等）。
 - [CONTRIBUTING.md](../CONTRIBUTING.md): コントリビュート（コード貢献など）に関するガイドライン。
