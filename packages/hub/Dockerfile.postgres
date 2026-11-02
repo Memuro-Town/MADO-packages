@@ -1,3 +1,25 @@
+FROM golang:1.27.3 AS trust-store
+FROM postgres:16 AS xml-builder
+ARG LIBXML2_VERSION=2.12.7+dfsg+really2.9.14-2.1+deb13u3
+COPY --from=trust-store /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY security/libxml2 /security/libxml2
+RUN sh /security/libxml2/build.sh
+# Debianの再梱包ソースで省略されたテストデータを同じ上流バージョンから補う。
+ADD --checksum=sha256:60d74a257d1ccec0475e749cba2f21559e48139efba6ff28224357c7c798dfee https://download.gnome.org/sources/libxml2/2.9/libxml2-2.9.14.tar.xz /tmp/libxml2-fixtures.tar.xz
+RUN mkdir /tmp/libxml2-fixtures \
+    && tar -xf /tmp/libxml2-fixtures.tar.xz -C /tmp/libxml2-fixtures \
+    && cp -an /tmp/libxml2-fixtures/libxml2-2.9.14/test/. /build/libxml2-2.12.7+dfsg+really2.9.14/test/ \
+    && cp -an /tmp/libxml2-fixtures/libxml2-2.9.14/result/. /build/libxml2-2.12.7+dfsg+really2.9.14/result/
+RUN make -C /build/libxml2-2.12.7+dfsg+really2.9.14 -j2 check > /out/upstream-check.log 2>&1 || { tail -100 /out/upstream-check.log; exit 1; }
+
+# gosu 1.20 は user データベースの無制限解析を修正。更新済みGoでビルドする。
+FROM golang:1.27.3 AS gosu-builder
+RUN git clone https://github.com/tianon/gosu.git /src/gosu \
+    && cd /src/gosu \
+    && git checkout 29b939aa5bd4dc588af765b8248f6e39150d2565 \
+    && CGO_ENABLED=0 go build -trimpath -o /gosu . \
+    && /gosu nobody id
+
 # pgAudit入りのPostgres 16。
 #
 # 公式の postgres:16-alpine ではなく Debian ベースの postgres:16 を土台にしている。
@@ -5,7 +27,20 @@
 # postgresql-16-pgaudit として存在するため（`apt-cache search pgaudit` で確認済み）。
 # LGWAN搬入時はAlpineよりイメージサイズが大きくなる点はトレードオフとして残る。
 FROM postgres:16
+COPY --from=gosu-builder /gosu /usr/local/bin/gosu
+# 公式PostgresにはCAバンドルがないため、HTTPSでのAPT取得前に信頼ストアを配置する。
+COPY --from=gosu-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends postgresql-16-pgaudit \
+RUN sed -i 's|http://|https://|g' /etc/apt/sources.list.d/* \
+    && apt-get update -o APT::Update::Error-Mode=any \
+    && apt-get upgrade -y \
+    && apt-get install -y --no-install-recommends ca-certificates postgresql-16-pgaudit \
     && rm -rf /var/lib/apt/lists/*
+
+# Debian公式配信までのローカル修正。修正前後のPoCとDebianテストを通過したdebを配置。
+COPY --from=xml-builder /out/libxml2-fixed.deb /tmp/libxml2-fixed.deb
+RUN dpkg -i /tmp/libxml2-fixed.deb && rm /tmp/libxml2-fixed.deb
+RUN apt-get purge -y --auto-remove dirmngr gnupg gnupg-l10n gpg gpg-agent gpgconf gpgsm \
+    && rm -rf /var/lib/apt/lists/*
+LABEL local.security.libxml2.backport="mado2" \
+      local.security.libxml2.cves="CVE-2026-6653,CVE-2026-86138,CVE-2026-86139,CVE-2026-86140,CVE-2026-86142,CVE-2026-86143,CVE-2026-86144"
