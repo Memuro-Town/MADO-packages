@@ -37,11 +37,11 @@
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^3.0.3",
-    "jose": "^6.2.3",
-    "next": "16.2.6",
+    "jose": "6.2.14",
+    "next": "16.4.3",
     "prisma": "^5.22.0",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

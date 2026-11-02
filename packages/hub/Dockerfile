@@ -1,7 +1,7 @@
 # ── base: 共通イメージ ──
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 # Prisma のクエリエンジンが必要とする共有ライブラリ
-RUN apk add --no-cache libc6-compat openssl
+RUN apk upgrade --no-cache && apk add --no-cache libc6-compat openssl
 
 # ── deps: 依存パッケージのインストール ──
 FROM base AS deps
@@ -22,8 +22,11 @@ RUN npm run build
 # ── runner: 本番用の軽量イメージ ──
 # next.config.ts の output: "standalone" が生成する最小構成のみを配置する。
 # node_modules を丸ごと持ち込まないためイメージサイズが大幅に小さくなる。
-FROM node:20-alpine AS runner
-RUN apk add --no-cache libc6-compat openssl
+FROM node:22-alpine AS runner
+# 本番ではNode.jsのみを使うため、不要なパッケージ管理ツールを持ち込まない。
+RUN apk upgrade --no-cache && apk add --no-cache libc6-compat openssl \
+ && rm -rf /usr/local/lib/node_modules/npm /opt/yarn-* \
+           /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/yarn /usr/local/bin/yarnpkg
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
