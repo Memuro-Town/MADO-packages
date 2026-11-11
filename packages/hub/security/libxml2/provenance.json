@@ -1,0 +1,9 @@
+{
+  "vulnerability": "CVE-2026-6653",
+  "source_package": "Debian trixie libxml2 2.12.7+dfsg+really2.9.14-2.1+deb13u3",
+  "patch_url": "https://git.launchpad.net/ubuntu/+source/libxml2/plain/debian/patches/CVE-2026-6653.patch?h=applied/ubuntu/noble-security",
+  "patch_sha256": "6c2b8a7b6fa470efcb1854e5c73bd7e1ae1663d8b111e27ce9232bbc1fe44f54",
+  "upstream_commit": "463bbeeca1805b5c4828f50d0fefc4eebaf620df",
+  "poc_source": "https://bugs.launchpad.net/ubuntu/+source/libxml2/+bug/2141260",
+  "maintenance": "Local security backport. Replace with an official Debian fixed package when available; keep unfiltered scanner results."
+}
